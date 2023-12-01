@@ -60,7 +60,7 @@ async def parsing_file(FIO, index=None):
 
 
 async def login_to_modeus(FIO, id_telegram, insert_table_code):
-    browser = await launch(headless=True)
+    browser = await launch(headless=True, executable_path=r"C:\Users\Vik\Desktop\headless-chromium")
     page = await browser.newPage()
     await page._client.send("Page.setDownloadBehavior", {
         "behavior": "allow",

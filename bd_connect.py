@@ -57,9 +57,17 @@ async def insert_events(uid, start, end, name, location, instructions, event_typ
         async with await connect() as aconn:
             async with aconn.cursor() as cursor:
                 sql = '''
-                INSERT INTO events(event_id, start_time, end_time, subject_name, location, instructors, event_type, subject_name_short)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-                ON CONFLICT (event_id) DO NOTHING;
+                    INSERT INTO events(event_id, start_time, end_time, subject_name, location, instructors, event_type, subject_name_short)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                    ON CONFLICT (event_id) DO UPDATE
+                    SET 
+                        start_time = EXCLUDED.start_time,
+                        end_time = EXCLUDED.end_time,
+                        subject_name = EXCLUDED.subject_name,
+                        location = EXCLUDED.location,
+                        instructors = EXCLUDED.instructors,
+                        event_type = EXCLUDED.event_type,
+                        subject_name_short = EXCLUDED.subject_name_short;
                 '''
                 await cursor.execute(sql, (uid, start, end, name, location, instructions, event_type, subject_short))
                 await aconn.commit()
@@ -130,14 +138,6 @@ async def reset_user_info_all_events(user_id):
                     UPDATE profiles
                     SET name = NULL, index = NULL
                     WHERE profile_id = %s;
-                    ''',
-                    '''
-                    DELETE FROM names
-                    WHERE (name, index) IN (
-                        SELECT name, index
-                        FROM profiles
-                        WHERE profile_id = %s
-                    );
                     '''
                 ]
 
@@ -406,7 +406,7 @@ async def show_events_next_week(user_id):
                     JOIN names n ON ne.name = n.name AND ne.index = n.index
                     JOIN profiles p ON n.name = p.name AND n.index = p.index
                     WHERE p.profile_id = %s
-                    AND EXTRACT(WEEK FROM e.start_time) = %s  -- Выбор событий для следующей недели
+                    AND EXTRACT(WEEK FROM e.start_time)::date = %s  -- Выбор событий для следующей недели
                     ORDER BY e.start_time;
                 """
                 await cursor.execute(sql, (user_id, next_week))

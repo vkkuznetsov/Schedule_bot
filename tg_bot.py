@@ -31,6 +31,7 @@ class Form(StatesGroup):
     wait_input = State()
     synced_name = State()
     waiting_for_friend = State()
+    working_borwser = State()
 
 
 @dp.message(Command('start'))
@@ -78,7 +79,8 @@ async def callbacks_num(callback: types.CallbackQuery):
                 reply_markup=friend_add())
     elif action == 'schedule':
         profile_id, name, index, second_name, second_index = await show_profile(callback.message.chat.id)
-        await callback.message.edit_text(f'Расписание <u><strong>{name}</strong></u>', reply_markup=get_schedule(),parse_mode='HTML')
+        await callback.message.edit_text(f'Расписание <u><strong>{name}</strong></u>', reply_markup=get_schedule(),
+                                         parse_mode='HTML')
 
 
 @dp.callback_query(F.data.startswith('friend_'))
@@ -162,29 +164,32 @@ async def callbacks_num(callback: types.CallbackQuery, state: FSMContext):
 
     if action == "changeName":
         await state.set_state(Form.wait_input)
-        await delete_all_friends(callback.message.chat.id)
         await reset_user_info(callback.message.chat.id)
 
         await callback.message.answer('Введите ФИО для изменения', reply_markup=ForceReply())
 
     elif action == "changeFriends":
-        await callback.message.edit_text('УВЕДОМЛЕНИЯ\nСписок дурзей:')
+        await callback.message.edit_text('Список дурзей:')
 
     elif action == "reload":
+        await state.set_state(Form.working_borwser)
+
         profile_id, name, index, second_name, second_index = await show_profile(user_id=callback.message.chat.id)
         await callback.message.edit_text(f'Ожидайте...')
 
         # удаляем старые записи
 
         await reset_user_info_all_events(user_id=profile_id)
-        await reset_name_certain(name, index)
-        # добавляем чела с новыми записями
+
+        # добавляем пользоватея с новыми записями
         await reload_profile_events(FIO=name, id_telegram=profile_id, index_student=index)
 
         await callback.message.edit_text(f'Готово!', reply_markup=get_keyboard())
 
+        await state.set_state(Form.synced_name)
+
     elif action == "notifications":
-        await callback.message.edit_text('УВЕДОМЛЕНИЯ\nСписок дурзей:')
+        await callback.message.edit_text('УВЕДОМЛЕНИЯ:\n')
 
 
 @dp.message(F.text.lower() == 'пары сегодня')
