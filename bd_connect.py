@@ -23,7 +23,6 @@ async def insert_profile(profile_id, name, index=None):
         print(e)
 
 
-
 async def insert_names(name, index=None):
     try:
         async with await connect() as aconn:
@@ -149,6 +148,7 @@ async def reset_user_info_all_events(user_id):
     except Exception as e:
         print(e)
 
+
 async def reset_name_certain(FIO, index):
     try:
         async with await connect() as aconn:
@@ -165,7 +165,6 @@ async def reset_name_certain(FIO, index):
 
     except Exception as e:
         print(e)
-
 
 
 async def show_profile(user_id):
@@ -250,7 +249,7 @@ day_names = {
     'Saturday': 'Суббота',
     'Sunday': 'Воскресенье',
 }
-pair_smiles = {
+start_pair_smiles = {
     '08:30': '1️⃣',
     '10:15': '2️⃣',
     '12:00': '3️⃣',
@@ -259,6 +258,16 @@ pair_smiles = {
     '17:30': '6️⃣',
     '19:10': '7️⃣',
     '20:50': '8️⃣',
+}
+end_pair_smiles = {
+    '10:00': '1️⃣',
+    '11:45': '2️⃣',
+    '13:30': '3️⃣',
+    '15:30': '4️⃣',
+    '17:15': '5️⃣',
+    '19:00': '6️⃣',
+    '20:40': '7️⃣',
+    '22:50': '8️⃣',
 }
 
 
@@ -272,25 +281,33 @@ async def format_event(result):
             day_of_week = event_date.strftime("%A")
             date = event_date.strftime("%d.%m")
             day_of_week_ru = day_names.get(day_of_week)
-            formatted_result += f"\n\n{tab}<strong><u>{day_of_week_ru} {date}</u></strong>{tab}"
+            formatted_result += f"\n\n{tab}<strong><u>{day_of_week_ru} {date}</u></strong>\n"
             current_day = event_date
-        location = f'🏘{event[3]}\n'
+        location = f'🏘 {event[3]}\n'
         start_time = event[0].strftime("%H:%M")
         end_time = event[1].strftime("%H:%M")
 
-        emoji_order = pair_smiles[start_time]
-        name_description = f"\n{emoji_order} <b>{event[6]} - {event[2]}</b>\n"
+        emoji_order = start_pair_smiles[start_time]
 
-        time = f'⏰ {start_time} - {end_time}\n'
-        instructor = f'🧑‍🔬{event[5]}\n'
+        # Определяем, является ли пара "двойной" на основе разницы во времени
+        start_minutes = int(event[0].strftime("%H")) * 60 + int(event[0].strftime("%M"))
+        end_minutes = int(event[1].strftime("%H")) * 60 + int(event[1].strftime("%M"))
+        time_difference = end_minutes - start_minutes
+
+        if time_difference > 90:
+            emoji_order += f'-{end_pair_smiles[end_time]}'
+
+        time = f'⏰ {start_time} - {end_time}'
+        instructor = f'\n🧑‍🔬 {event[5]}'
         event_type = event[4]
         type_emoji = (
-            '🟩' if event_type == "Лекционное занятие" else
-            '🟦' if event_type == "Практическое занятие" else
-            '🟧' if event_type == "Лабораторное занятие" else
-            '🟥'
+            '🟢' if event_type == "Лекционное занятие" else
+            '🔵' if event_type == "Практическое занятие" else
+            '🟠' if event_type == "Лабораторное занятие" else
+            '🔴'
         )
-        formatted_event = name_description + location + time + instructor + type_emoji + event_type + "\n"
+        name_description = f"\n{type_emoji} {emoji_order} <b>{event[6]} - {event[2]}</b>\n"
+        formatted_event = name_description + location + time + instructor + "\n"
         formatted_result += formatted_event
     return formatted_result
 
