@@ -18,11 +18,11 @@ from bd_connect import show_profile, show_events_this_week, show_events_today, \
     show_friend_by_index, show_events_today_friend, show_events_tomorrow_friend, show_events_this_week_friend, \
     show_events_next_week_friend, reset_user_info_all_events, reset_name_certain
 
-from config import token, token_weather
+from config import token, token_weather, token_test
 
 logging.basicConfig(level=logging.INFO)
 
-bot = Bot(token=token)
+bot = Bot(token=token_test)
 dp = Dispatcher()
 
 

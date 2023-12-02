@@ -1,6 +1,6 @@
 from pyppeteer import launch
 
-from config import vik_login, vik_pass
+from config import vik_login, vik_pass, windows_path, linux_path
 from bd_connect import insert_names, insert_profile
 from main import parsing_file
 
@@ -8,7 +8,7 @@ from main import parsing_file
 async def reload_profile_events(FIO, id_telegram, index_student):
     browser = await launch(headless=True)
     page = await browser.newPage()
-
+    path = windows_path
     await page.setViewport({'width': 1000, 'height': 500})
     url = 'https://utmn.modeus.org/'
     try:
@@ -55,10 +55,10 @@ async def reload_profile_events(FIO, id_telegram, index_student):
             await page.waitFor(1500)
 
             import os
-            os.makedirs(f"C:\\Users\Vik\Desktop\{FIO}", exist_ok=True)
+            os.makedirs(f"{path}{FIO}", exist_ok=True)
             await page._client.send("Page.setDownloadBehavior", {
                 "behavior": "allow",
-                "downloadPath": f"C:\\Users\Vik\Desktop\{FIO}"
+                "downloadPath": f"{path}{FIO}"
             })
 
             # Скачивание
@@ -82,10 +82,10 @@ async def reload_profile_events(FIO, id_telegram, index_student):
             await page.waitFor(1500)
 
             import os
-            os.makedirs(f"C:\\Users\Vik\Desktop\{FIO}", exist_ok=True)
+            os.makedirs(f"{path}{FIO}", exist_ok=True)
             await page._client.send("Page.setDownloadBehavior", {
                 "behavior": "allow",
-                "downloadPath": f"C:\\Users\Vik\Desktop\{FIO}"
+                "downloadPath": f"{path}{FIO}"
             })
 
             # Скачивание

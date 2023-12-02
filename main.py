@@ -2,18 +2,18 @@ import os
 import glob
 from pyppeteer import launch
 
-from config import vik_login, vik_pass
+from config import vik_login, vik_pass, windows_path, linux_path
 from bd_connect import insert_events, insert_many_table, insert_names, insert_profile, insert_friend
 
-
+path = windows_path
 async def parsing_file(FIO, index=None):
-    folder_path = f"C:\\Users\Vik\Desktop\{FIO}"
+    folder_path = f"{path}{FIO}"
     ics_files = glob.glob(os.path.join(folder_path, '*.ics'))
 
     if ics_files:
         newest_file = max(ics_files, key=os.path.getctime)
     else:
-        print('БЛят у нас эксепшен, файла нахуй нет')
+        print('Файла нет!')
 
     with open(newest_file, 'r', encoding='utf-8') as file:
         temp_list = list()
@@ -132,11 +132,10 @@ async def login_to_modeus(FIO, id_telegram, insert_table_code):
                 await page.select('select.fc-view-select', 'month')
                 await page.waitFor(1500)
 
-
-                os.makedirs(f"C:\\Users\Vik\Desktop\{true_FIO}", exist_ok=True)
+                os.makedirs(f"{path}{true_FIO}", exist_ok=True)
                 await page._client.send("Page.setDownloadBehavior", {
                     "behavior": "allow",
-                    "downloadPath": f"C:\\Users\Vik\Desktop\{true_FIO}"
+                    "downloadPath": f"{path}{true_FIO}"
                 })
 
                 # Скачивание
@@ -166,9 +165,7 @@ async def login_to_modeus(FIO, id_telegram, insert_table_code):
 
 
 async def modeus_cont(page, FIO, id_telegram, insert_table_code, index_student=0):
-
     element_index_to_click = index_student
-
 
     people_info = await page.evaluate('''() =>{
 
@@ -236,11 +233,10 @@ async def modeus_cont(page, FIO, id_telegram, insert_table_code, index_student=0
     await page.select('select.fc-view-select', 'month')
     await page.waitFor(1500)
 
-
-    os.makedirs(f"C:\\Users\Vik\Desktop\{true_FIO}", exist_ok=True)
+    os.makedirs(f"{path}{true_FIO}", exist_ok=True)
     await page._client.send("Page.setDownloadBehavior", {
         "behavior": "allow",
-        "downloadPath": f"C:\\Users\Vik\Desktop\{true_FIO}"
+        "downloadPath": f"{path}{true_FIO}"
     })
 
     # Скачивание
