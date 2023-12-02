@@ -7,7 +7,7 @@ from bd_connect import insert_events, insert_many_table, insert_names, insert_pr
 
 
 async def parsing_file(FIO, index=None):
-    folder_path = r"C:\Users\Vik\Desktop"
+    folder_path = f"C:\\Users\Vik\Desktop\{FIO}"
     ics_files = glob.glob(os.path.join(folder_path, '*.ics'))
 
     if ics_files:
@@ -60,12 +60,9 @@ async def parsing_file(FIO, index=None):
 
 
 async def login_to_modeus(FIO, id_telegram, insert_table_code):
-    browser = await launch(headless=True, executable_path=r"C:\Users\Vik\Desktop\headless-chromium")
+    browser = await launch(headless=False, executable_path=r"C:\Users\Vik\Desktop\headless-chromium")
     page = await browser.newPage()
-    await page._client.send("Page.setDownloadBehavior", {
-        "behavior": "allow",
-        "downloadPath": r"C:\Users\Vik\Desktop"
-    })
+
     await page.setViewport({'width': 1000, 'height': 500})
     url = 'https://utmn.modeus.org/'
     try:
@@ -101,67 +98,136 @@ async def login_to_modeus(FIO, id_telegram, insert_table_code):
             await page.browser.close()
             return '', 0, page
 
-        elif elements_count > 1:
-            people_info = await page.evaluate('''() => {
-                    const peopleElements = document.querySelectorAll('.ui-multiselect-item.ui-corner-all');
-                    const peopleData = [];
-    
-                    peopleElements.forEach(element => {
-                        const label = element.querySelector('.label').innerText;
-                        const descriptions = element.querySelectorAll('.description');
-    
-                        const descriptionsData = [];
-                        descriptions.forEach(desc => {
-                            descriptionsData.push(desc.innerText);
-                        });
-    
-                        peopleData.push({ label, descriptions: descriptionsData });
+
+        elif elements_count > 0:
+            people_info = await page.evaluate('''() =>{
+            
+                const peopleElements = document.querySelectorAll('.ui-multiselect-item.ui-corner-all');
+                const peopleData = {};
+                
+                peopleElements.forEach((element, index) => 
+                {
+                    const label = element.querySelector('.label').innerText;
+                    const descriptions = element.querySelectorAll('.description');
+                    const descriptionsData = [];
+                    descriptions.forEach(desc => {
+                        descriptionsData.push(desc.innerText);
                     });
-    
-                    return peopleData;
-                }''')
+                    peopleData[index] = { label, descriptions: descriptionsData };
+                });
+                
+                return peopleData;
+            }''')
 
-            pair_smiles = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟']
-            final_str = ""
+            if elements_count == 1:
 
-            for index, person in enumerate(people_info):
-                final_str += f"\n\n{pair_smiles[index]} <strong>{person['label']}</strong>\n"
-                for desc in person['descriptions']:
-                    final_str += f" {desc}"
+                true_FIO = people_info['0']['label']
+                # Выбор студента (единсвенный студент)
+                await page.click('.description.ng-star-inserted')
+                await page.waitFor(1500)
+                # Применение фильтров
+                await page.click('.btn.btn-apply')
+                await page.click(".btn-filter")
+                # Выбор что расписание на месяц
+                await page.select('select.fc-view-select', 'month')
+                await page.waitFor(1500)
 
-            return final_str, elements_count, page
-        elif elements_count == 1:
-            # Выбор студента (единсвенный студент)
-            await page.click('.description.ng-star-inserted')
-            await page.waitFor(1500)
-            # Применение фильтров
-            await page.click('.btn.btn-apply')
-            await page.click(".btn-filter")
-            # Выбор что расписание на месяц
-            await page.select('select.fc-view-select', 'month')
-            await page.waitFor(1500)
 
-            # Скачивание
-            await page.click('.btn.btn2.icon-icalendar.button-reset-default-styles.mb-0')
-            await page.waitFor(2500)
-            await insert_names(FIO, 1)
-            if insert_table_code == 1:
-                await insert_profile(profile_id=id_telegram, name=FIO, index=1)
-            elif insert_table_code == 2:
-                await insert_friend(profile_id=id_telegram, name=FIO, index=1)
-            await parsing_file(FIO, 1)
-            await page.browser.close()
-            return '', 1, page
+                os.makedirs(f"C:\\Users\Vik\Desktop\{true_FIO}", exist_ok=True)
+                await page._client.send("Page.setDownloadBehavior", {
+                    "behavior": "allow",
+                    "downloadPath": f"C:\\Users\Vik\Desktop\{true_FIO}"
+                })
+
+                # Скачивание
+                await page.click('.btn.btn2.icon-icalendar.button-reset-default-styles.mb-0')
+                await page.waitFor(2500)
+                await insert_names(true_FIO, 1)
+                if insert_table_code == 1:
+                    await insert_profile(profile_id=id_telegram, name=true_FIO, index=1)
+                elif insert_table_code == 2:
+                    await insert_friend(profile_id=id_telegram, name=true_FIO, index=1)
+                await parsing_file(true_FIO, 1)
+                await page.browser.close()
+                return '', 1, page
+            elif elements_count > 1:
+                pair_smiles = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟']
+                final_str = ""
+                for index in people_info.keys():
+                    person = people_info[index]
+                    final_str += f"\n\n{pair_smiles[int(index)]} <strong>{person['label']}</strong>\n"
+                    for desc in person['descriptions']:
+                        final_str += f" {desc}"
+                return final_str, elements_count, page
+
+
     except Exception as e:
         return (e)
 
 
 async def modeus_cont(page, FIO, id_telegram, insert_table_code, index_student=0):
+
     element_index_to_click = index_student
 
-    people_elements = await page.querySelectorAll('.ui-multiselect-item.ui-corner-all')
 
-    await people_elements[element_index_to_click].click()
+    people_info = await page.evaluate('''() =>{
+
+                    const peopleElements = document.querySelectorAll('.ui-multiselect-item.ui-corner-all');
+                    const peopleData = {};
+
+                    peopleElements.forEach((element, index) => 
+                    {
+                        const label = element.querySelector('.label').innerText;
+                        const descriptions = element.querySelectorAll('.description');
+                        const descriptionsData = [];
+                        descriptions.forEach(desc => {
+                            descriptionsData.push(desc.innerText);
+                        });
+                        peopleData[index] = { label, descriptions: descriptionsData };
+                    });
+
+                    return peopleData;
+                }''')
+    true_FIO = people_info[f'{element_index_to_click}']['label']
+
+    # Выбор вкладки студенты
+    await page.keyboard.down('Control')  # Нажимаем клавишу Control (или Command на Mac)
+    await page.keyboard.press('A')  # Выделяем весь текст
+    await page.keyboard.up('Control')  # Отпускаем клавишу Control
+
+    await page.keyboard.press('Backspace')  # Удаляем выделенный текст
+
+    # Поиск студента
+    await page.keyboard.type(true_FIO)
+    await page.waitFor(1500)
+
+    people_info_new = await page.evaluate('''() =>{
+
+                        const peopleElements = document.querySelectorAll('.ui-multiselect-item.ui-corner-all');
+                        const peopleData = {};
+
+                        peopleElements.forEach((element, index) => 
+                        {
+                            const label = element.querySelector('.label').innerText;
+                            const descriptions = element.querySelectorAll('.description');
+                            const descriptionsData = [];
+                            descriptions.forEach(desc => {
+                                descriptionsData.push(desc.innerText);
+                            });
+                            peopleData[index] = { label, descriptions: descriptionsData };
+                        });
+
+                        return peopleData;
+                    }''')
+
+    true_data = people_info[f'{element_index_to_click}']
+    new_index = 0
+    for index in people_info_new.keys():
+        if true_data == people_info_new[index]:
+            new_index = int(index)
+
+    people_elements = await page.querySelectorAll('.ui-multiselect-item.ui-corner-all')
+    await people_elements[new_index].click()
 
     await page.waitFor(1500)
     # Применение
@@ -170,16 +236,23 @@ async def modeus_cont(page, FIO, id_telegram, insert_table_code, index_student=0
     await page.select('select.fc-view-select', 'month')
     await page.waitFor(1500)
 
+
+    os.makedirs(f"C:\\Users\Vik\Desktop\{true_FIO}", exist_ok=True)
+    await page._client.send("Page.setDownloadBehavior", {
+        "behavior": "allow",
+        "downloadPath": f"C:\\Users\Vik\Desktop\{true_FIO}"
+    })
+
     # Скачивание
     await page.click('.btn.btn2.icon-icalendar.button-reset-default-styles.mb-0')
     await page.waitFor(2500)
-    await insert_names(name=FIO, index=index_student + 1)
+    await insert_names(name=true_FIO, index=new_index + 1)
 
     if insert_table_code == 1:
-        await insert_profile(profile_id=id_telegram, name=FIO, index=index_student + 1)
+        await insert_profile(profile_id=id_telegram, name=true_FIO, index=new_index + 1)
 
     elif insert_table_code == 2:
-        await insert_friend(profile_id=id_telegram, name=FIO, index=index_student + 1)
+        await insert_friend(profile_id=id_telegram, name=true_FIO, index=new_index + 1)
 
-    await parsing_file(FIO, index=index_student + 1)
+    await parsing_file(true_FIO, index=new_index + 1)
     await page.browser.close()

@@ -8,10 +8,7 @@ from main import parsing_file
 async def reload_profile_events(FIO, id_telegram, index_student):
     browser = await launch(headless=True)
     page = await browser.newPage()
-    await page._client.send("Page.setDownloadBehavior", {
-        "behavior": "allow",
-        "downloadPath": r"C:\Users\Vik\Desktop"
-    })
+
     await page.setViewport({'width': 1000, 'height': 500})
     url = 'https://utmn.modeus.org/'
     try:
@@ -57,6 +54,13 @@ async def reload_profile_events(FIO, id_telegram, index_student):
             await page.select('select.fc-view-select', 'month')
             await page.waitFor(1500)
 
+            import os
+            os.makedirs(f"C:\\Users\Vik\Desktop\{FIO}", exist_ok=True)
+            await page._client.send("Page.setDownloadBehavior", {
+                "behavior": "allow",
+                "downloadPath": f"C:\\Users\Vik\Desktop\{FIO}"
+            })
+
             # Скачивание
             await page.click('.btn.btn2.icon-icalendar.button-reset-default-styles.mb-0')
             await page.waitFor(2500)
@@ -76,6 +80,13 @@ async def reload_profile_events(FIO, id_telegram, index_student):
             # Выбор что расписание на месяц
             await page.select('select.fc-view-select', 'month')
             await page.waitFor(1500)
+
+            import os
+            os.makedirs(f"C:\\Users\Vik\Desktop\{FIO}", exist_ok=True)
+            await page._client.send("Page.setDownloadBehavior", {
+                "behavior": "allow",
+                "downloadPath": f"C:\\Users\Vik\Desktop\{FIO}"
+            })
 
             # Скачивание
             await page.click('.btn.btn2.icon-icalendar.button-reset-default-styles.mb-0')

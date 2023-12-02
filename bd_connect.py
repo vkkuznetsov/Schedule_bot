@@ -406,7 +406,7 @@ async def show_events_next_week(user_id):
                     JOIN names n ON ne.name = n.name AND ne.index = n.index
                     JOIN profiles p ON n.name = p.name AND n.index = p.index
                     WHERE p.profile_id = %s
-                    AND EXTRACT(WEEK FROM e.start_time)::date = %s  -- Выбор событий для следующей недели
+                    AND EXTRACT(WEEK FROM e.start_time) = %s  
                     ORDER BY e.start_time;
                 """
                 await cursor.execute(sql, (user_id, next_week))
