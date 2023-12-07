@@ -149,6 +149,35 @@ async def reset_user_info_all_events(user_id):
         print(e)
 
 
+async def reset_user_name_all_events(name, index):
+    try:
+        async with await connect() as aconn:
+            async with aconn.cursor() as cursor:
+                # Список запросов для удаления информации о пользователе
+                sql_queries = [
+                    '''
+                    DELETE FROM names_events
+                    WHERE name = %s AND index = %s;
+                    ''',
+                    '''
+                    DELETE FROM events
+                    WHERE event_id IN (
+                        SELECT event_id
+                        FROM names_events
+                        WHERE name = %s AND index = %s
+                    );
+                    '''
+                ]
+
+                for query in sql_queries:
+                    await cursor.execute(query, (name, index))
+
+                await aconn.commit()
+
+    except Exception as e:
+        print(e)
+
+
 async def reset_name_certain(FIO, index):
     try:
         async with await connect() as aconn:
@@ -306,7 +335,7 @@ async def format_event(result):
             '🟠' if event_type == "Лабораторное занятие" else
             '🔴'
         )
-        name_description = f"\n{type_emoji} {emoji_order} <b>{event[6]} - {event[2]}</b>\n"
+        name_description = f"\n{type_emoji} <b>{event[6]}</b>\n{emoji_order} <b>{event[2]}</b>\n"
         formatted_event = name_description + location + time + instructor + "\n"
         formatted_result += formatted_event
     return formatted_result
@@ -563,5 +592,19 @@ async def show_events_next_week_friend(name, index):
                 ans += formatted_result
                 return ans
 
+    except Exception as e:
+        print(e)
+
+
+async def get_all_names():
+    try:
+        async with await connect() as aconn:
+            async with aconn.cursor() as cursor:
+                sql = '''
+                SELECT * FROM names;
+                '''
+                await cursor.execute(sql)
+                result = await cursor.fetchall()
+                return result
     except Exception as e:
         print(e)

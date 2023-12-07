@@ -1,4 +1,5 @@
 import asyncio
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 import logging
 from aiogram import Bot, Dispatcher, types
 from aiogram import F
@@ -11,12 +12,13 @@ from keyboards import builder1, get_keyboard, get_schedule, return_from_schedule
     friend_menu, get_schedule_from_friends, return_from_schedule_friends, confirm_delete_friends
 
 from main import login_to_modeus, modeus_cont
+from reload_database import reload_database
 from reload_events import reload_profile_events
 from weather import get_forecast
 from bd_connect import show_profile, show_events_this_week, show_events_today, \
     show_events_tomorrow, show_events_next_week, reset_user_info, reset_database, show_friends, delete_all_friends, \
     show_friend_by_index, show_events_today_friend, show_events_tomorrow_friend, show_events_this_week_friend, \
-    show_events_next_week_friend, reset_user_info_all_events, reset_name_certain
+    show_events_next_week_friend, reset_user_info_all_events, reset_name_certain, get_all_names
 
 from config import token, token_weather, token_test
 
@@ -222,6 +224,11 @@ async def menu(message: types.Message):
     await message.answer(f'{await reset_database()}', reply_markup=builder1.as_markup(resize_keyboard=True))
 
 
+@dp.message(F.text.lower() == 'names')
+async def menu(message: types.Message):
+    await message.answer(f'{await reload_database()}', reply_markup=builder1.as_markup(resize_keyboard=True))
+
+
 @dp.message(F.text.lower() == 'профиль')
 async def profile(message: types.Message):
     await message.answer(f'Профиль\n{await show_profile(message.chat.id)}')
@@ -306,8 +313,30 @@ async def menu(message: types.Message):
                          reply_markup=builder1.as_markup(resize_keyboard=True))
 
 
+
+
+
+async def scheduled_job():
+    print("Выполнение запланированной задачи")
+    await reload_database()
+
+
 async def main():
-    await dp.start_polling(bot)
+    # Ваш код инициализации бота и прочего
+
+    # Создаем асинхронный планировщик
+    scheduler = AsyncIOScheduler()
+    scheduler.add_job(scheduled_job, 'cron', hour=3, minute=1)
+    scheduler.start()
+
+    try:
+        # Запуск основного асинхронного цикла
+        await dp.start_polling(bot)
+    except (KeyboardInterrupt, SystemExit):
+        pass
+    finally:
+        # Остановка планировщика при завершении программы
+        scheduler.shutdown()
 
 
 if __name__ == '__main__':

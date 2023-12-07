@@ -65,8 +65,8 @@ async def reload_profile_events(FIO, id_telegram, index_student):
             await page.click('.btn.btn2.icon-icalendar.button-reset-default-styles.mb-0')
             await page.waitFor(2500)
             await insert_names(name=FIO, index=element_index_to_click + 1)
-
-            await insert_profile(profile_id=id_telegram, name=FIO, index=element_index_to_click + 1)
+            if id_telegram != 0:
+                await insert_profile(profile_id=id_telegram, name=FIO, index=element_index_to_click + 1)
 
             await parsing_file(FIO, index=element_index_to_click + 1)
             await page.browser.close()
@@ -91,9 +91,10 @@ async def reload_profile_events(FIO, id_telegram, index_student):
             # Скачивание
             await page.click('.btn.btn2.icon-icalendar.button-reset-default-styles.mb-0')
             await page.waitFor(2500)
-            await insert_names(FIO, 1)
+            if id_telegram != 0:
+                await insert_names(FIO, 1)
 
-            await insert_profile(profile_id=id_telegram, name=FIO, index=1)
+                await insert_profile(profile_id=id_telegram, name=FIO, index=1)
 
             await parsing_file(FIO, 1)
             await page.browser.close()
