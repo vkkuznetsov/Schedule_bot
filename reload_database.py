@@ -5,7 +5,7 @@ from reload_events import reload_profile_events
 
 async def reload_database():
     names = await get_all_names()
-    semaphore = asyncio.Semaphore(3)  # Ограничиваем количество одновременных задач
+    semaphore = asyncio.Semaphore(3)
 
     async def process(name, index):
         async with semaphore:

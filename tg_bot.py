@@ -322,20 +322,15 @@ async def scheduled_job():
 
 
 async def main():
-    # Ваш код инициализации бота и прочего
-
-    # Создаем асинхронный планировщик
     scheduler = AsyncIOScheduler()
     scheduler.add_job(scheduled_job, 'cron', hour=3, minute=1)
     scheduler.start()
 
     try:
-        # Запуск основного асинхронного цикла
         await dp.start_polling(bot)
     except (KeyboardInterrupt, SystemExit):
         pass
     finally:
-        # Остановка планировщика при завершении программы
         scheduler.shutdown()
 
 

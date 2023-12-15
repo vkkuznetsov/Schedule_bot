@@ -36,16 +36,14 @@ def get_forecast(token_weather):
 
         # Создаем словарь для замены времени на "Утро", "День" и "Вечер"
         time_labels = {
-            "06:00:00": "Утро",
-            "12:00:00": "День",
-            "18:00:00": "Вечер"
+            "12:00:00": "День"
         }
 
         for item in next_day_data:
             time = get_time(item).split()[-1]  # Получаем только время из даты
             main = item['weather'][0]['main']
-            temp = item['main']['temp']
-            wind_speed = item['wind']['speed']
+            temp = round(item['main']['temp'])
+            wind_speed = round(item['wind']['speed'])
 
             # Проверяем, если время в словаре временных меток, и используем его
             time_label = time_labels.get(time, "")
